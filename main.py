@@ -79,6 +79,7 @@ class my_model(nn.Module):
             nn.Linear(64, 64),
             nn.Linear(64, 64),
             nn.Linear(64, self.n_out),
+            nn.Softmax(dim=1),
         )
 
     def forward(self, x):
@@ -96,10 +97,10 @@ model = my_model()
 criteria = nn.MSELoss()
 
 # Adam optimizer with learning rate 0.1 and L2 regularization with weight 1e-4.
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-4)
 
 # Training
-print("----- Begin training-----")
+print("----- Begin training -----")
 
 for epoch in range(9):
 
@@ -110,9 +111,9 @@ for epoch in range(9):
         # requires_grad is set False because we do not need to compute the
         # derivative of the inputs.
         sensors_data = Variable(sensors_data, requires_grad=False)
-        target = Variable(target.float(), requires_grad=False)
+        target = Variable(target, requires_grad=False)
 
-        # Set gradient to 0.
+        # Set gradient to 0
         optimizer.zero_grad()
         # Feed forward.
         pred = model(sensors_data)
@@ -169,11 +170,6 @@ for k, (sensors_data, target) in enumerate(my_loader_2):
     loss.backward()
 
     running_loss += loss.item()
-    # Print loss every 10 iterations.
-    if k % 1000 == 0:
-        print('[%d, %5d] loss: %.8f' %
-              (epoch + 1, k + 1, loss))
-        running_loss = 0.0
 
 
 print(running_loss)

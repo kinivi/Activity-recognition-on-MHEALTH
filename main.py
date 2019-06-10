@@ -1,8 +1,6 @@
 # Lets start with the imports.
 import numpy as np
 import pandas as pd
-from PIL import Image
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -25,9 +23,8 @@ dataset = pd.read_csv('subject_3.txt', delimiter=" ", header=None, dtype=np.floa
 dataset = np.append(li, dataset, axis=0)
 
 
-
-tr_data = dataset[:int(dataset.shape[0] * 0.85)]
-test_data = dataset[int(dataset.shape[0] * 0.85):]
+tr_data = dataset[:int(dataset.shape[0] * 0.75)]
+test_data = dataset[int(dataset.shape[0] * 0.70):]
 
 
 # We read the dataset and create an iterable.
@@ -101,8 +98,9 @@ class my_model(nn.Module):
             nn.Linear(self.n_in, 64),
             nn.Linear(64, 64),
             nn.Linear(64, 64),
+            nn.ReLU(),
             nn.Linear(64, self.n_out),
-            nn.(dim=1),
+
         )
 
     def forward(self, x):
@@ -117,15 +115,15 @@ class my_model(nn.Module):
 model = my_model()
 
 # Negative log likelihood loss.
-criteria = nn.NLLLoss()
+criteria = nn.CrossEntropyLoss()
 
 # Adam optimizer with learning rate 0.1 and L2 regularization with weight 1e-4.
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-4)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=1e-4)
 
 # Training
 print("----- Begin training -----")
 
-for epoch in range(9):
+for epoch in range(14):
 
     running_loss = 0.0
     for k, (sensors_data, target) in enumerate(my_loader):
@@ -142,7 +140,7 @@ for epoch in range(9):
         # Definition of inputs as variables for the net.
         # requires_grad is set False because we do not need to compute the
         # derivative of the inputs.
-        sensors_data = Variable(sensors_data, requires_grad=False)
+        sensors_data = Variable(sensors_data, requires_grad=True)
         target = Variable(target.long(), requires_grad=False)
         target_NLLL = Variable(torch.FloatTensor(500).uniform_(0, 12).long())
 
@@ -151,7 +149,6 @@ for epoch in range(9):
         # Feed forward.
         pred = model(sensors_data)
         # Loss calculation.
-
 
         loss = criteria(pred, target)
         # Gradient calculation.
@@ -197,11 +194,21 @@ correct = 0
 total = 0
 for k, (sensors_data, target) in enumerate(my_loader_2):
 
+    # Resizing array for NLLLoss
+    final_arr = []
+
+    # Reshaping array to get normalized feature vector
+    for x in target:
+        final_arr.append(int(x[0]))
+
+    target = torch.Tensor(np.asarray(final_arr))
+
     # Definition of inputs as variables for the net.
     # requires_grad is set False because we do not need to compute the
     # derivative of the inputs.
     sensors_data = Variable(sensors_data, requires_grad=False)
-    target = Variable(target.float(), requires_grad=False)
+    target = Variable(target.long(), requires_grad=False)
+    target_NLLL = Variable(torch.FloatTensor(500).uniform_(0, 12).long())
 
     # Set gradient to 0.
     optimizer.zero_grad()
@@ -209,7 +216,7 @@ for k, (sensors_data, target) in enumerate(my_loader_2):
     pred = model(sensors_data)
 
     #Acuurancy counting
-    target_indieces = np.argmax(target.data, axis=1)
+    target_indieces = target.data
     prediction_indieces = np.argmax(pred.data, axis=1)
 
     total += target.size(0)

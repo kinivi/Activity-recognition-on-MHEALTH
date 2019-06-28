@@ -11,8 +11,8 @@ import time
 
 print('------ Data loading... ------')
 
-dataset = pd.read_csv('input.csv', delimiter=",", header=None, dtype=np.float32).values  # Read data file.
-dataset_labels = pd.read_csv('labels.csv', delimiter=",", header=None, dtype=np.float32).values  # Read data file.
+dataset = pd.read_csv('step_1.csv', delimiter=",", header=None, dtype=np.float32).values  # Read data file.
+dataset_labels = pd.read_csv('step_2.csv', delimiter=",", header=None, dtype=np.float32).values  # Read data file.
 
 total_count = dataset_labels.shape[0]
 
@@ -39,5 +39,5 @@ print(dict(zip(unique, counts)))
 
 
 dataset = np.delete(dataset, [3, 4, 26, 27, 49, 50, 72, 73, 95, 96, 118, 119, 141, 142, 164, 165, 187, 188, 210, 211], 1)
-np.savetxt("zero_input.csv", dataset, delimiter=",")
-np.savetxt("zero_labels.csv", dataset_labels, delimiter=",")
+np.savetxt("step_1.csv", dataset, delimiter=",")
+np.savetxt("step_1_lb.csv", dataset_labels, delimiter=",")

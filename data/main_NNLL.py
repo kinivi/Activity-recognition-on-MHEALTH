@@ -7,6 +7,7 @@ from torch.autograd import Variable
 import torch.utils.data as data
 import time
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from sendgrid import sendgrid
 
 #  Setting CUDA
@@ -19,7 +20,7 @@ print(device)
 
 # Setting number of features and batch size
 NUMBER_OF_FEATURES = 11
-BATCH_SIZE = 1
+BATCH_SIZE = 5
 WINDOW_SIZE = 10
 
 # Arrays for plots
@@ -69,11 +70,11 @@ class MyModel(nn.Module):
         self.n_out = 12
 
         self.algo = nn.Sequential(
-            nn.Linear(self.n_in, 1128),
-            nn.Linear(1128, 2256),
+            nn.Linear(self.n_in, 2256),
+            nn.Linear(2256, 4512),
             nn.ReLU(),
-            nn.Linear(2256, 564),
-            nn.Linear(564, self.n_out)
+            nn.Linear(4512, 1128),
+            nn.Linear(1128, self.n_out)
         )
 
     def forward(self, x):
@@ -92,7 +93,7 @@ MyModel.cuda(model, device)
 criteria = nn.CrossEntropyLoss()
 
 # Adam optimizer with learning rate 0.1 and L2 regularization with weight 1e-4.
-optimizer = torch.optim.Adam(model.parameters(), lr=0.000025, weight_decay=1e-5)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0000195)
 
 
 # defining Test function
@@ -229,15 +230,15 @@ if __name__ == '__main__':
 
     print('------ Data loading... ------')
 
-    dataset = pd.read_csv('zero_input.csv', delimiter=",", header=None, dtype=np.float32).values  # Read data file.
-    dataset_labels = pd.read_csv('zero_labels.csv', delimiter=",", header=None,
+    dataset = pd.read_csv('step_1.csv', delimiter=",", header=None, dtype=np.float32).values  # Read data file.
+    dataset_labels = pd.read_csv('step_1_lb.csv', delimiter=",", header=None,
                                  dtype=np.float32).values  # Read data file.
 
-    tr_data = dataset[:int(dataset.shape[0] * 0.8)]
-    tr_data_labels = dataset_labels[:int(dataset_labels.shape[0] * 0.8)]
+    tr_data = dataset[:int(dataset.shape[0] * 0.75)]
+    tr_data_labels = dataset_labels[:int(dataset_labels.shape[0] * 0.75)]
 
-    test_data = dataset[int(dataset.shape[0] * 0.8):]
-    test_data_labels = dataset_labels[int(dataset.shape[0] * 0.8):]
+    test_data = dataset[int(dataset.shape[0] * 0.75):]
+    test_data_labels = dataset_labels[int(dataset.shape[0] * 0.75):]
 
     training_data = my_sensors_NNLL(tr_data, tr_data_labels)
     test_data = my_sensors_NNLL(test_data, test_data_labels)
@@ -252,7 +253,7 @@ if __name__ == '__main__':
     # Training
     print("----- Begin training -----")
 
-    for epoch in range(1):
+    for epoch in range(5):
 
         running_loss = 0.0
         for k, (sensors_data, target) in enumerate(my_loader):
@@ -315,7 +316,7 @@ if __name__ == '__main__':
     plt.xlabel("epochs")
     plt.ylabel("Accuracy on test data")
     plt.legend(loc='lower left')
-
+    plt.figure(1).gca().xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.savefig('save_1.png')
 
     plt.figure(2)
@@ -325,8 +326,17 @@ if __name__ == '__main__':
     plt.xlabel("epochs")
     plt.ylabel("Overall loss")
     plt.legend(loc='lower left')
-
+    plt.figure(2).gca().xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.savefig('save_2.png')
+
+    plt.figure(3)
+    plt.plot(np.arange(len(overall_loss_tr)), overall_loss_tr, 'r', label='Training')
+    plt.title("Overall loss Training")
+    plt.xlabel("epochs")
+    plt.ylabel("Overall loss")
+    plt.legend(loc='lower left')
+    plt.figure(3).gca().xaxis.set_major_locator(MaxNLocator(integer=True))
+    plt.savefig('save_3.png')
 
     # Send email about ending
     sendgrid()

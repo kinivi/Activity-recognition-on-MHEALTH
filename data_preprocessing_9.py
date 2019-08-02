@@ -12,7 +12,7 @@ import time
 from sklearn.utils import shuffle
 
 
-WINDOWS_SIZE = 10
+WINDOWS_SIZE = 20
 WINDOWS_STEP = 1
 
 print('------ Data loading... ------')
@@ -63,7 +63,30 @@ if __name__ == '__main__':
             zero_indieces.append(index)
 
     inputs = np.delete(inputs, zero_indieces, 0)
+    im = inputs
     labels = np.delete(labels, zero_indieces, 0)
+
+    # buffer = []
+    #
+    # for index, (data) in enumerate(inputs):
+    #
+    #     pre_buffer = data
+    #
+    #
+    #     a_chest = pre_buffer[0] ** 2 + pre_buffer[1] ** 2 + pre_buffer[2] ** 2
+    #     a_lankle = pre_buffer[5] ** 2 + pre_buffer[6] ** 2 + pre_buffer[7] ** 2
+    #     g_lankle = pre_buffer[8] ** 2 + pre_buffer[9] ** 2 + pre_buffer[10] ** 2
+    #     m_lankle = pre_buffer[11] ** 2 + pre_buffer[12] ** 2 + pre_buffer[13] ** 2
+    #     a_rarm = pre_buffer[14] ** 2 + pre_buffer[15] ** 2 + pre_buffer[16] ** 2
+    #     g_rarm = pre_buffer[17] ** 2 + pre_buffer[18] ** 2 + pre_buffer[19] ** 2
+    #     m_rarm = pre_buffer[20] ** 2 + pre_buffer[21] ** 2 + pre_buffer[22] ** 2
+    #
+    #     buffer.append([a_chest, a_lankle, g_lankle, m_lankle, a_rarm, g_rarm, m_rarm])
+    #
+    # inputs = np.asarray(buffer, dtype="float32")
+
+
+
 
     print("---------- Zeros deleted ----------")
 
@@ -94,9 +117,9 @@ if __name__ == '__main__':
         max_label_count = np.count_nonzero(buffer_labels == max_label)
 
         if max_label_count >= WINDOWS_SIZE / 2:
-            window_label = max_label
+            window_label = max_label - 1
         else:
-            window_label = min_label
+            window_label = min_label - 1
 
 
 
@@ -106,7 +129,7 @@ if __name__ == '__main__':
         buffer = buffer.reshape(1, -1)
 
 
-        if buffer.shape[1] >= 23 * WINDOWS_SIZE:
+        if buffer.shape[1] == 23 * WINDOWS_SIZE:
             try:
                 input_neurons.append(buffer[0].tolist())
                 input_neurons_labels.append(int(window_label[0]))

@@ -12,31 +12,13 @@ import time
 from sklearn.utils import shuffle
 
 
-WINDOWS_SIZE = 10
+WINDOWS_SIZE = 20
 WINDOWS_STEP = 1
 
 print('------ Data loading... ------')
-# Create testset andnn.Linear(128, 256), dataset
-dataset = pd.read_csv('subject_1.txt', delimiter=" ", header=None, dtype=np.float32).values  # Read data file.
-li = dataset
-dataset = pd.read_csv('subject_2.txt', delimiter=" ", header=None, dtype=np.float32).values  # Read data file.
-li = np.append(li, dataset, axis=0)
-dataset = pd.read_csv('subject_3.txt', delimiter=" ", header=None, dtype=np.float32).values
-li = np.append(li, dataset, axis=0)
-dataset = pd.read_csv('subject_4.txt', delimiter=" ", header=None, dtype=np.float32).values
-li = np.append(li, dataset, axis=0)
-dataset = pd.read_csv('subject_5.txt', delimiter=" ", header=None, dtype=np.float32).values
-li = np.append(li, dataset, axis=0)
-dataset = pd.read_csv('subject_6.txt', delimiter=" ", header=None, dtype=np.float32).values
-li = np.append(li, dataset, axis=0)
-dataset = pd.read_csv('subject_7.txt', delimiter=" ", header=None, dtype=np.float32).values
-li = np.append(li, dataset, axis=0)
-dataset = pd.read_csv('subject_8.txt', delimiter=" ", header=None, dtype=np.float32).values
-li = np.append(li, dataset, axis=0)
-dataset = pd.read_csv('subject_9.txt', delimiter=" ", header=None, dtype=np.float32).values
-li = np.append(li, dataset, axis=0)
-dataset = pd.read_csv('subject_10.txt', delimiter=" ", header=None, dtype=np.float32).values
-dataset = np.append(li, dataset, axis=0)
+# Create testset
+dataset = pd.read_csv('export_dataframe.csv', delimiter=",", header=None, dtype=np.float32).values  # Read data file.
+
 
 # Shuffling dataset
 # np.random.shuffle(dataset)
@@ -48,8 +30,8 @@ time_part_1 = 0
 time_part_2 = 0
 
 if __name__ == '__main__':
-    labels = dataset[:, 23:]
-    inputs = min_max_scaler.fit_transform(dataset[:, :23])  # Normalization
+    labels = dataset[:, 16:]
+    inputs = min_max_scaler.fit_transform(dataset[:, :16])  # Normalization
     input_neurons = []
     input_neurons_labels = []
 
@@ -78,7 +60,6 @@ if __name__ == '__main__':
         # get one 'Window'
         buffer = inputs[[x for x in range(i, max_size)]]
 
-
         # ---------- Working with labels ----------
 
         # init label for current window
@@ -106,7 +87,7 @@ if __name__ == '__main__':
         buffer = buffer.reshape(1, -1)
 
 
-        if buffer.shape[1] >= 23 * WINDOWS_SIZE:
+        if buffer.shape[1] >= 16 * WINDOWS_SIZE:
             try:
                 input_neurons.append(buffer[0].tolist())
                 input_neurons_labels.append(int(window_label[0]))
@@ -128,8 +109,8 @@ if __name__ == '__main__':
     input_neurons_labels = np.asarray(input_neurons_labels)
 
     print(input_neurons.shape)
-    np.savetxt("step_1.csv", input_neurons, delimiter=",")
-    np.savetxt("step_2.csv", input_neurons_labels, delimiter=",")
+    np.savetxt("16step_1.csv", input_neurons, delimiter=",")
+    np.savetxt("16step_2.csv", input_neurons_labels, delimiter=",")
 
     t2 = time.time()
     time_part_2 += t2 - t1

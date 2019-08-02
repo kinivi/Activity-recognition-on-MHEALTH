@@ -8,7 +8,7 @@ from torch.autograd import Variable
 import torch.utils.data as data
 import time
 
-
+WINDOW_SIZE = 9
 print('------ Data loading... ------')
 
 dataset = pd.read_csv('step_1.csv', delimiter=",", header=None, dtype=np.float32).values  # Read data file.
@@ -21,6 +21,7 @@ print(dict(zip(unique, counts)))
 
 
 zero_indieces = []
+features_for_delete = []
 
 for index, (label) in enumerate(dataset_labels):
     label = int(label[0])
@@ -38,6 +39,10 @@ unique, counts = np.unique(dataset_labels, return_counts=True)
 print(dict(zip(unique, counts)))
 
 
-dataset = np.delete(dataset, [3, 4, 26, 27, 49, 50, 72, 73, 95, 96, 118, 119, 141, 142, 164, 165, 187, 188, 210, 211], 1)
+for counter in range(3, 23 * WINDOW_SIZE, 23):
+    features_for_delete.append(counter)
+    features_for_delete.append(counter + 1)
+
+dataset = np.delete(dataset, features_for_delete, 1)
 np.savetxt("step_1.csv", dataset, delimiter=",")
 np.savetxt("step_1_lb.csv", dataset_labels, delimiter=",")

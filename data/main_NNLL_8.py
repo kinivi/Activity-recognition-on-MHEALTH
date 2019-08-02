@@ -20,8 +20,9 @@ print(device)
 
 # Setting number of features and batch size
 NUMBER_OF_FEATURES = 11
-BATCH_SIZE = 4
-WINDOW_SIZE = 10
+BATCH_SIZE = 1
+WINDOW_SIZE = 20
+EPOCHS = 300
 
 # Arrays for plots
 overall_accuracy_test = []
@@ -66,15 +67,17 @@ class my_sensors_NNLL(data.Dataset):
 class MyModel(nn.Module):
     def __init__(self):
         super(MyModel, self).__init__()
-        self.n_in = 7 * WINDOW_SIZE
+        self.n_in = 16 * WINDOW_SIZE
         self.n_out = 12
 
         self.algo = nn.Sequential(
-            nn.Linear(self.n_in, 128),
-            nn.Linear(128, 64),
+            nn.Linear(self.n_in, 256),
             nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.Linear(32, self.n_out)
+            nn.Linear(256, 564),
+            nn.Linear(564, 1128),
+            nn.ReLU(),
+            nn.Linear(1128, 256),
+            nn.Linear(256, self.n_out)
         )
 
     def forward(self, x):
@@ -93,7 +96,7 @@ MyModel.cuda(model, device)
 criteria = nn.CrossEntropyLoss()
 
 # Adam optimizer with learning rate 0.1 and L2 regularization with weight 1e-4.
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0000195)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0000400, weight_decay=1e-4)
 
 
 # defining Test function
@@ -103,8 +106,8 @@ def Test():
     running_loss_test = 0.0
     correct = 0
     total_test = 0
-    correct_by_class = [0.01 for x in range(NUMBER_OF_FEATURES + 1)]
-    total_by_class = [0.01 for x in range(NUMBER_OF_FEATURES + 1)]
+    correct_by_class = [0.000001 for x in range(NUMBER_OF_FEATURES + 1)]
+    total_by_class = [0.000001 for x in range(NUMBER_OF_FEATURES + 1)]
     for l, (sensors_data_test, target_test) in enumerate(my_loader_2):
 
         # Resizing array for NLLLoss
@@ -230,9 +233,9 @@ if __name__ == '__main__':
 
     print('------ Data loading... ------')
 
-    dataset = pd.read_csv('step_1.csv', delimiter=",", header=None, dtype=np.float32).values  # Read data file.
-    dataset_labels = pd.read_csv('step_2.csv', delimiter=",", header=None,
-                                 dtype=np.float32).values  # Read data file.
+    dataset = pd.read_csv('16step_1.csv', delimiter=",", header=None, dtype=np.float64).values  # Read data file.
+    dataset_labels = pd.read_csv('16step_2.csv', delimiter=",", header=None,
+                                 dtype=np.int32).values  # Read data file.
 
     tr_data = dataset[:int(dataset.shape[0] * 0.75)]
     tr_data_labels = dataset_labels[:int(dataset_labels.shape[0] * 0.75)]
@@ -252,7 +255,7 @@ if __name__ == '__main__':
     # Training
     print("----- Begin training -----")
 
-    for epoch in range(60):
+    for epoch in range(EPOCHS):
 
         running_loss = 0.0
         for k, (sensors_data, target) in enumerate(my_loader):

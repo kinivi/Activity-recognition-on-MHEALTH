@@ -20,8 +20,10 @@ print(device)
 
 # Setting number of features and batch size
 NUMBER_OF_FEATURES = 11
-BATCH_SIZE = 4
+BATCH_SIZE = 5
 WINDOW_SIZE = 10
+INPUT_FEATURES = 21
+EPOCHS = 20
 
 # Arrays for plots
 overall_accuracy_test = []
@@ -43,9 +45,8 @@ class my_sensors_NNLL(data.Dataset):
         temp_arr = input_data_labels
         final_arr = []
 
-        # Reshaping array to get normalized feature vector
         for x in temp_arr:
-            final_arr.append(int(x[0]) - 1)
+            final_arr.append(int(x[0]))
 
         final_arr = np.asarray(final_arr)
 
@@ -62,19 +63,19 @@ class my_sensors_NNLL(data.Dataset):
         return torch.Tensor(self.data[index]), torch.Tensor([self.target[index]])
 
 
-# We build a simple model with the inputs and one output layer.
+# Build a simple model .
 class MyModel(nn.Module):
     def __init__(self):
         super(MyModel, self).__init__()
-        self.n_in = 7 * WINDOW_SIZE
+        self.n_in = INPUT_FEATURES * WINDOW_SIZE
         self.n_out = 12
 
         self.algo = nn.Sequential(
-            nn.Linear(self.n_in, 128),
-            nn.Linear(128, 64),
+            nn.Linear(self.n_in, 256),
+            nn.Linear(256, 564),
             nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.Linear(32, self.n_out)
+            nn.Linear(564, 128),
+            nn.Linear(128, self.n_out)
         )
 
     def forward(self, x):
@@ -89,11 +90,11 @@ class MyModel(nn.Module):
 model = MyModel()
 MyModel.cuda(model, device)
 
-# Negative log likelihood loss.
+# CrossEntropy loss.
 criteria = nn.CrossEntropyLoss()
 
-# Adam optimizer with learning rate 0.1 and L2 regularization with weight 1e-4.
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0000195)
+# Adam optimizer
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0002)
 
 
 # defining Test function
@@ -117,15 +118,13 @@ def Test():
         target_test = torch.Tensor(np.asarray(final_arr_test))
 
         # Definition of inputs as variables for the net.
-        # requires_grad is set False because we do not need to compute the
-        # derivative of the inputs.
         sensors_data_test = Variable(sensors_data_test, requires_grad=False).cuda(device)
         target_test = Variable(target_test.long(), requires_grad=False).cuda(device)
 
         # Feed forward.
         pred_test = model(sensors_data_test)
 
-        # Acuurancy counting
+        # Accurancy counting
         target_indieces = target_test.cpu().data
         prediction_indieces = np.argmax(pred_test.cpu().data, axis=1)
 
@@ -162,70 +161,10 @@ def Test():
     accuracy_by_classes.append(accuracy_by_class)
 
 
-# defining Test function
-# def Test_tr():
-#     # Test
-#     print("---- Begin test TRAINING ----")
-#     running_loss_test = 0.0
-#     correct = 0
-#     total_test = 0
-#     correct_by_class = [0.01 for x in range(NUMBER_OF_FEATURES + 1)]
-#     total_by_class = [0.01 for x in range(NUMBER_OF_FEATURES + 1)]
-#     for l, (sensors_data_test, target_test) in enumerate(my_loader_tr):
-#
-#         # Resizing array for NLLLoss
-#         final_arr_test = []
-#
-#         # Reshaping array to get normalized feature vector
-#         for c in target_test:
-#             final_arr_test.append(int(c[0]))
-#
-#         target_test = torch.Tensor(np.asarray(final_arr_test))
-#
-#         # Definition of inputs as variables for the net.
-#         # requires_grad is set False because we do not need to compute the
-#         # derivative of the inputs.
-#         sensors_data_test = Variable(sensors_data_test, requires_grad=False).cuda(device)
-#         target_test = Variable(target_test.long(), requires_grad=False).cuda(device)
-#
-#         # Feed forward.
-#         pred_test = model(sensors_data_test)
-#
-#         # Acuurancy counting
-#         target_indieces = target_test.cpu().data
-#         prediction_indieces = np.argmax(pred_test.cpu().data, axis=1)
-#
-#         # Counting  by classes
-#         for index, data_test in enumerate(target_indieces):
-#             total_by_class[int(data_test.item())] += 1
-#             if data_test.item() == prediction_indieces[index]:
-#                 correct_by_class[int(data_test.item())] += 1
-#
-#         total_test += target_test.size(0)  # total target size
-#         correct += (target_indieces == prediction_indieces).sum().item()  # counting correct one
-#
-#         # Loss calculation.
-#         loss_test = criteria(pred_test, target_test)
-#         # Gradient calculation.
-#         loss_test.backward()
-#
-#         running_loss_test += loss_test.item()
-#
-#     print(running_loss_test)
-#
-#     print('Accuracy of the network on the test: %d %%' % (
-#             100 * correct / total_test))
-#     overall_accuracy_tr.append(100 * correct / total_test) #Add for plot
-#
-#     print('Accuracy by classes \n')
-#
-#     accuracy_by_class_tr = []
-#     for (index, data_total) in enumerate(total_by_class):
-#         print("Accuracy of class {} - {} %".format(index+1, (correct_by_class[index] / data_total) * 100))
-#         accuracy_by_class_tr.append((correct_by_class[index] / data_total) * 100)
-#
-#     accuracy_by_classes_tr.append(accuracy_by_class_tr)
 
+# ----------------------------------------------
+# ---------------- Main function ---------------
+# ----------------------------------------------
 if __name__ == '__main__':
 
     print('------ Data loading... ------')
@@ -234,6 +173,7 @@ if __name__ == '__main__':
     dataset_labels = pd.read_csv('step_2.csv', delimiter=",", header=None,
                                  dtype=np.float32).values  # Read data file.
 
+    # Splitting the data
     tr_data = dataset[:int(dataset.shape[0] * 0.75)]
     tr_data_labels = dataset_labels[:int(dataset_labels.shape[0] * 0.75)]
 
@@ -243,7 +183,7 @@ if __name__ == '__main__':
     training_data = my_sensors_NNLL(tr_data, tr_data_labels)
     test_data = my_sensors_NNLL(test_data, test_data_labels)
 
-    # We create the dataloader for both data
+    # We create the Dataloader for both data
     my_loader = data.DataLoader(training_data, batch_size=BATCH_SIZE, shuffle=True)
     my_loader_2 = data.DataLoader(test_data, batch_size=BATCH_SIZE * 10000)
 
@@ -252,25 +192,25 @@ if __name__ == '__main__':
     # Training
     print("----- Begin training -----")
 
-    for epoch in range(60):
+    for epoch in range(EPOCHS):
 
         running_loss = 0.0
         for k, (sensors_data, target) in enumerate(my_loader):
 
-            # Resizing array for NLLLoss
-            final_arr = []
+            # # Resizing array for NLLLoss
+            # final_arr = []
 
-            # Reshaping array to get normalized feature vector
-            for x in target:
-                final_arr.append(int(x[0]))
+            # # Reshaping array to get normalized feature vector
+            # for x in target:
+            #     final_arr.append(int(x[0]))
 
-            target = torch.Tensor(np.asarray(final_arr))
+
 
             # Definition of inputs as variables for the net.
             # requires_grad is set False because we do not need to compute the
             # derivative of the inputs.
             sensors_data = Variable(sensors_data, requires_grad=True).cuda(device)
-            target = Variable(target.long(), requires_grad=False).cuda(device)
+            target = Variable(target.view(-1).long(), requires_grad=False).cuda(device)
 
             # Set gradient to 0
             optimizer.zero_grad()
@@ -310,13 +250,12 @@ if __name__ == '__main__':
     plt.figure(1)
     plt.plot(np.arange(len(overall_accuracy_test)), overall_accuracy_test, 'b', label='Test')
     plt.plot(np.arange(len(overall_accuracy_tr)), overall_accuracy_tr, 'r', label='Training')
-    #plt.plot(np.arange(len(actual)), actual, 'g', label='Actual')
     plt.title("Overall accuracy on test Data")
     plt.xlabel("epochs")
     plt.ylabel("Accuracy on test data")
     plt.legend(loc='lower left')
     plt.figure(1).gca().xaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.savefig('save_1.png')
+    plt.savefig('save_1L-21.png')
 
     plt.figure(2)
     plt.plot(np.arange(len(overall_loss)), overall_loss, 'g', label='Actual')
@@ -326,7 +265,7 @@ if __name__ == '__main__':
     plt.ylabel("Overall loss")
     plt.legend(loc='lower left')
     plt.figure(2).gca().xaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.savefig('save_2.png')
+    plt.savefig('save_2L-21.png')
 
     plt.figure(3)
     plt.plot(np.arange(len(overall_loss_tr)), overall_loss_tr, 'r', label='Training')
@@ -335,21 +274,8 @@ if __name__ == '__main__':
     plt.ylabel("Overall loss")
     plt.legend(loc='lower left')
     plt.figure(3).gca().xaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.savefig('save_3.png')
+    plt.savefig('save_3L-21.png')
 
-    # Send email about ending
+    # Send email about ending (see sendgrid.py)
     sendgrid()
-
-
-    # plt.figure(3)
-    # plt.plot(np.arange(len(y_last_usage)), y_last_usage, 'g', label='Actual')
-    # plt.plot(np.arange(len(pred_last_usage)), pred_last_usage, 'b', label='Predicted')
-    # plt.title("Predicted vs Actual last test example, {} timesteps to {} timesteps".format(window_source_size,
-    #                                                                                        window_target_size))
-    # plt.xlabel("Time in 5 minute increments")
-    # plt.ylabel("Usage (normalized)")
-    # plt.legend(loc='lower left')
-
-
-
 

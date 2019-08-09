@@ -1,22 +1,15 @@
 # Lets start with the imports.
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn import preprocessing
-from collections import Counter
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
-import torch.utils.data as data
 import time
 from sklearn.utils import shuffle
-
 
 WINDOWS_SIZE = 10
 WINDOWS_STEP = 1
 
 print('------ Data loading... ------')
-# Create testset andnn.Linear(128, 256), dataset
+# Load all 10 subjects data
 dataset = pd.read_csv('subject_1.txt', delimiter=" ", header=None, dtype=np.float32).values  # Read data file.
 li = dataset
 dataset = pd.read_csv('subject_2.txt', delimiter=" ", header=None, dtype=np.float32).values  # Read data file.
@@ -38,12 +31,10 @@ li = np.append(li, dataset, axis=0)
 dataset = pd.read_csv('subject_10.txt', delimiter=" ", header=None, dtype=np.float32).values
 dataset = np.append(li, dataset, axis=0)
 
-# Shuffling dataset
-# np.random.shuffle(dataset)
-
 # Inint scaler for Normalization
 min_max_scaler = preprocessing.MinMaxScaler()
 
+# Start timer for checking estimated time
 time_part_1 = 0
 time_part_2 = 0
 
@@ -65,6 +56,8 @@ if __name__ == '__main__':
     inputs = np.delete(inputs, zero_indieces, 0)
     labels = np.delete(labels, zero_indieces, 0)
 
+    inputs = np.delete(inputs, [3, 4], 1)
+
     print("---------- Zeros deleted ----------")
 
     for i in range(0, inputs.shape[0], WINDOWS_STEP):
@@ -77,7 +70,6 @@ if __name__ == '__main__':
 
         # get one 'Window'
         buffer = inputs[[x for x in range(i, max_size)]]
-
 
         # ---------- Working with labels ----------
 
@@ -94,17 +86,14 @@ if __name__ == '__main__':
         max_label_count = np.count_nonzero(buffer_labels == max_label)
 
         if max_label_count >= WINDOWS_SIZE / 2:
-            window_label = max_label
+            window_label = max_label - 1
         else:
-            window_label = min_label
-
-
+            window_label = min_label - 1
 
         # ---------- Working with labels -----------
 
         # Reshape array for input neurons
         buffer = buffer.reshape(1, -1)
-
 
         if buffer.shape[1] >= 23 * WINDOWS_SIZE:
             try:
@@ -116,11 +105,10 @@ if __name__ == '__main__':
         if i % 50000 == 0:
             print("Processing...")
 
-
     t1 = time.time()
     time_part_1 += t1 - t0
 
-    # Shuffling after creating windows
+    # Shuffling data after creating windows
     input_neurons, input_neurons_labels = shuffle(input_neurons, input_neurons_labels, random_state=0)
 
     # To numpy array

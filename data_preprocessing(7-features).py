@@ -1,22 +1,16 @@
 # Lets start with the imports.
+import time
+
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn import preprocessing
-from collections import Counter
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
-import torch.utils.data as data
-import time
 from sklearn.utils import shuffle
-
 
 WINDOWS_SIZE = 20
 WINDOWS_STEP = 1
 
 print('------ Data loading... ------')
-# Create testset andnn.Linear(128, 256), dataset
+# Load all 10 subjects data
 dataset = pd.read_csv('subject_1.txt', delimiter=" ", header=None, dtype=np.float32).values  # Read data file.
 li = dataset
 dataset = pd.read_csv('subject_2.txt', delimiter=" ", header=None, dtype=np.float32).values  # Read data file.
@@ -38,19 +32,17 @@ li = np.append(li, dataset, axis=0)
 dataset = pd.read_csv('subject_10.txt', delimiter=" ", header=None, dtype=np.float32).values
 dataset = np.append(li, dataset, axis=0)
 
-# Shuffling dataset
-# np.random.shuffle(dataset)
-
-# Inint scaler for Normalization
+# Init scaler for Normalization
 min_max_scaler = preprocessing.MinMaxScaler()
 
+# Start timer for checking estimated time
 time_part_1 = 0
 time_part_2 = 0
 
 if __name__ == '__main__':
     labels = dataset[:, 23:]
     inputs = min_max_scaler.fit_transform(dataset[:, :23])  # Normalization
-    input_neurons = []
+    input_neurons = []  # Init buffers
     input_neurons_labels = []
 
     # Deleting zeros for optimization
@@ -63,32 +55,31 @@ if __name__ == '__main__':
             zero_indieces.append(index)
 
     inputs = np.delete(inputs, zero_indieces, 0)
-    im = inputs
     labels = np.delete(labels, zero_indieces, 0)
 
-    # buffer = []
-    #
-    # for index, (data) in enumerate(inputs):
-    #
-    #     pre_buffer = data
-    #
-    #
-    #     a_chest = pre_buffer[0] ** 2 + pre_buffer[1] ** 2 + pre_buffer[2] ** 2
-    #     a_lankle = pre_buffer[5] ** 2 + pre_buffer[6] ** 2 + pre_buffer[7] ** 2
-    #     g_lankle = pre_buffer[8] ** 2 + pre_buffer[9] ** 2 + pre_buffer[10] ** 2
-    #     m_lankle = pre_buffer[11] ** 2 + pre_buffer[12] ** 2 + pre_buffer[13] ** 2
-    #     a_rarm = pre_buffer[14] ** 2 + pre_buffer[15] ** 2 + pre_buffer[16] ** 2
-    #     g_rarm = pre_buffer[17] ** 2 + pre_buffer[18] ** 2 + pre_buffer[19] ** 2
-    #     m_rarm = pre_buffer[20] ** 2 + pre_buffer[21] ** 2 + pre_buffer[22] ** 2
-    #
-    #     buffer.append([a_chest, a_lankle, g_lankle, m_lankle, a_rarm, g_rarm, m_rarm])
-    #
-    # inputs = np.asarray(buffer, dtype="float32")
-
-
-
-
     print("---------- Zeros deleted ----------")
+
+    # Сompression X_Y_Z axis into one spatial vector
+
+    buffer = []
+
+    for index, (data) in enumerate(inputs):
+        pre_buffer = data
+
+        a_chest = pre_buffer[0] ** 2 + pre_buffer[1] ** 2 + pre_buffer[2] ** 2
+        a_lankle = pre_buffer[5] ** 2 + pre_buffer[6] ** 2 + pre_buffer[7] ** 2
+        g_lankle = pre_buffer[8] ** 2 + pre_buffer[9] ** 2 + pre_buffer[10] ** 2
+        m_lankle = pre_buffer[11] ** 2 + pre_buffer[12] ** 2 + pre_buffer[13] ** 2
+        a_rarm = pre_buffer[14] ** 2 + pre_buffer[15] ** 2 + pre_buffer[16] ** 2
+        g_rarm = pre_buffer[17] ** 2 + pre_buffer[18] ** 2 + pre_buffer[19] ** 2
+        m_rarm = pre_buffer[20] ** 2 + pre_buffer[21] ** 2 + pre_buffer[22] ** 2
+
+        buffer.append([a_chest, a_lankle, g_lankle, m_lankle, a_rarm, g_rarm, m_rarm])
+
+    inputs = np.asarray(buffer, dtype="float32")
+
+    # ---------------------------------------------
+    # Starting creating WINDOWS
 
     for i in range(0, inputs.shape[0], WINDOWS_STEP):
 
@@ -100,7 +91,6 @@ if __name__ == '__main__':
 
         # get one 'Window'
         buffer = inputs[[x for x in range(i, max_size)]]
-
 
         # ---------- Working with labels ----------
 
@@ -121,15 +111,12 @@ if __name__ == '__main__':
         else:
             window_label = min_label - 1
 
-
-
         # ---------- Working with labels -----------
 
         # Reshape array for input neurons
         buffer = buffer.reshape(1, -1)
 
-
-        if buffer.shape[1] == 23 * WINDOWS_SIZE:
+        if buffer.shape[1] == 7 * WINDOWS_SIZE:
             try:
                 input_neurons.append(buffer[0].tolist())
                 input_neurons_labels.append(int(window_label[0]))
@@ -139,11 +126,10 @@ if __name__ == '__main__':
         if i % 50000 == 0:
             print("Processing...")
 
-
     t1 = time.time()
     time_part_1 += t1 - t0
 
-    # Shuffling after creating windows
+    # Shuffling data after creating windows
     input_neurons, input_neurons_labels = shuffle(input_neurons, input_neurons_labels, random_state=0)
 
     # To numpy array
@@ -151,8 +137,8 @@ if __name__ == '__main__':
     input_neurons_labels = np.asarray(input_neurons_labels)
 
     print(input_neurons.shape)
-    np.savetxt("step_1.csv", input_neurons, delimiter=",")
-    np.savetxt("step_2.csv", input_neurons_labels, delimiter=",")
+    np.savetxt("step_1C.csv", input_neurons, delimiter=",")
+    np.savetxt("step_2C.csv", input_neurons_labels, delimiter=",")
 
     t2 = time.time()
     time_part_2 += t2 - t1

@@ -6,3 +6,8 @@
 sendgrid.env
 
 \.idea/
+
+bin/
+
+lib/
+pyvenv\.cfg

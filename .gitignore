@@ -1,5 +1,4 @@
 # Data files
-*.txt
 *.csv
 
 \.idea/workspace\.xml

@@ -72,9 +72,11 @@ class MyModel(nn.Module):
 
         self.algo = nn.Sequential(
             nn.Linear(self.n_in, 256),
+            nn.ReLU(),
             nn.Linear(256, 564),
             nn.ReLU(),
             nn.Linear(564, 128),
+            nn.ReLU(),
             nn.Linear(128, self.n_out)
         )
 
